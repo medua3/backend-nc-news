@@ -25,10 +25,12 @@
   "devDependencies": {
     "husky": "^8.0.2",
     "jest": "^27.5.1",
-    "jest-extended": "^2.0.0"
+    "jest-extended": "^2.0.0",
+    "supertest": "^7.2.2"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
+    "express": "^5.2.1",
     "pg": "^8.17.2",
     "pg-format": "^1.0.4"
   },
