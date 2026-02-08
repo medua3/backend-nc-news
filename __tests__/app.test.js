@@ -1,6 +1,7 @@
 const db = require("../db/connection");
 const app = require("../db/app.js");
 const request = require("supertest");
+require("jest-sorted");
 afterAll(() => db.end());
 describe("GET /api/topics", () => {
   it("the route should respond with 200 :responds with an object that has  key of topics containing a value of arrays", () => {
@@ -96,4 +97,163 @@ it("responds with articles without a body property", () => {
         expect(article).not.toHaveProperty("body");
       });
     });
+});
+
+describe("GET /api/users", () => {
+  it("responds the route should respond with 200 :responds with an object that has  key of users containing a value of arrays", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then((res) => {
+        expect(res.body).toHaveProperty("users");
+        expect(Array.isArray(res.body.users)).toBe(true);
+      });
+  });
+  it("responds with the correct properties for each object inside the user array", () => {
+    return request(app)
+      .get("/api/users")
+      .then((res) => {
+        res.body.users.forEach((user) => {
+          expect(user).toMatchObject({
+            username: expect.any(String),
+            name: expect.any(String),
+            avatar_url: expect.any(String),
+          });
+        });
+      });
+  });
+});
+describe("GET /api/articles/:article_id", () => {
+  it("responds with status 200 and an article object with all required properties", () => {
+    return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then((res) => {
+        expect(res.body).toHaveProperty("article");
+
+        const article = res.body.article;
+
+        expect(article).toMatchObject({
+          author: expect.any(String),
+          title: expect.any(String),
+          article_id: 1,
+          body: expect.any(String),
+          topic: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String),
+        });
+      });
+  });
+  it("should get an article by its id", () => {
+    return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then((res) => {
+        expect(res.body.article.article_id).toBe(1);
+      });
+  });
+});
+describe("GET /api/articles/:article_id", () => {
+  it("responds with 404 when the article does not exist", () => {
+    return request(app)
+      .get("/api/articles/999999")
+      .expect(404)
+      .then((res) => {
+        expect(res.body).toEqual({
+          msg: "Article not found",
+        });
+      });
+  });
+  it("responds with 400 when article_id is invalid", () => {
+    return request(app)
+      .get("/api/articles/bannana")
+      .expect(400)
+      .then((res) => {
+        expect(res.body).toEqual({
+          msg: "Bad request",
+        });
+      });
+  });
+});
+
+describe("GET /api/articles/:article_id/comments", () => {
+  it("200: responds with an array of comments for the given article_id", () => {
+    return request(app)
+      .get("/api/articles/1/comments")
+      .expect(200)
+      .then((res) => {
+        expect(res.body).toHaveProperty("comments");
+        expect(Array.isArray(res.body.comments)).toBe(true);
+      });
+  });
+  it("200: each comment has the correct properties", () => {
+    return request(app)
+      .get("/api/articles/1/comments")
+      .expect(200)
+      .then((res) => {
+        res.body.comments.forEach((comment) => {
+          expect(comment).toMatchObject({
+            comment_id: expect.any(Number),
+            votes: expect.any(Number),
+            created_at: expect.any(String),
+            author: expect.any(String),
+            body: expect.any(String),
+            article_id: 1,
+          });
+        });
+      });
+  });
+  it("200: comments are sorted by most recent first", () => {
+    return request(app)
+      .get("/api/articles/1/comments")
+      .expect(200)
+      .then((res) => {
+        const dates = res.body.comments.map((comment) =>
+          new Date(comment.created_at).getTime(),
+        );
+        expect(dates).toBeSorted({ descending: true });
+      });
+  });
+  it("404: article does not exist", () => {
+    return request(app)
+      .get("/api/articles/9999/comments")
+      .expect(404)
+      .then((res) => {
+        expect(res.body.msg).toBe("Article not found");
+      });
+  });
+});
+
+describe("POST /api/articles/:article_id/comments", () => {
+  it("201: responds with the posted comment", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "This is a test comment",
+    };
+
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(newComment)
+      .expect(201)
+      .then((res) => {
+        expect(res.body.comment).toMatchObject({
+          comment_id: expect.any(Number),
+          author: "butter_bridge",
+          body: "This is a test comment",
+          article_id: 1,
+          votes: 0,
+          created_at: expect.any(String),
+        });
+      });
+  });
+  it("400: missing required fields", () => {
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send({ username: "butter_bridge" })
+      .expect(400)
+      .then((res) => {
+        expect(res.body.msg).toBe("Bad request");
+      });
+  });
 });
