@@ -1,4 +1,4 @@
-const { fetchArticles } = require("./articles.model");
+const { fetchArticles } = require("../model/articles.model");
 exports.getArticles = (req, res, next) => {
   fetchArticles()
     .then((articles) => {
@@ -6,7 +6,7 @@ exports.getArticles = (req, res, next) => {
     })
     .catch(next);
 };
-const { fetchArticleById } = require("./articles.model");
+const { fetchArticleById } = require("../model/articles.model");
 exports.getArticleById = (req, res, next) => {
   const { article_id } = req.params;
   fetchArticleById(article_id)
@@ -15,7 +15,7 @@ exports.getArticleById = (req, res, next) => {
     })
     .catch(next);
 };
-const { fetchCommentsByArticleId } = require("./articles.model");
+const { fetchCommentsByArticleId } = require("../model/articles.model");
 exports.getArticleComments = (req, res, next) => {
   const { article_id } = req.params;
   fetchCommentsByArticleId(article_id)
@@ -24,7 +24,7 @@ exports.getArticleComments = (req, res, next) => {
     })
     .catch(next);
 };
-const { insertComment } = require("./articles.model");
+const { insertComment } = require("../model/articles.model");
 
 exports.postArticleComment = (req, res, next) => {
   const { article_id } = req.params;
@@ -37,7 +37,7 @@ exports.postArticleComment = (req, res, next) => {
     .catch(next);
 };
 
-const { updateVote } = require("./articles.model");
+const { updateVote } = require("../model/articles.model");
 exports.patchArticleVotes = (req, res, next) => {
   const { article_id } = req.params;
   const { inc_votes } = req.body;

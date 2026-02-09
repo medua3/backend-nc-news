@@ -7,7 +7,7 @@ const {
   getArticleComments,
   postArticleComment,
   patchArticleVotes,
-} = require("./articles.controller");
+} = require("../controller/articles.controller");
 
 articlesRouter.get("/", getArticles);
 articlesRouter.get("/:article_id", getArticleById);

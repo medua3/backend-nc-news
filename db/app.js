@@ -1,14 +1,15 @@
 const express = require("express");
-const articlesRouter = require("./articles.router");
-const { getTopics } = require("./topics.controller");
-const { getUsers } = require("./users.controller");
+const articlesRouter = require("./router/articles.router");
+const { getTopics } = require("./controller/topics.controller");
+const { getUsers } = require("./controller/users.controller");
+const commentsRouter = require("./router/comment.router");
 const app = express();
 app.use(express.json());
 
 app.get("/api/topics/", getTopics);
 app.use("/api/articles", articlesRouter);
 app.get("/api/users", getUsers);
-
+app.use("/api/comments", commentsRouter);
 app.use((err, req, res, next) => {
   if (err.status && err.msg) {
     return res.status(err.status).send({ msg: err.msg });
