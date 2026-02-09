@@ -257,3 +257,72 @@ describe("POST /api/articles/:article_id/comments", () => {
       });
   });
 });
+
+describe("PATCH /api/articles/:article_id", () => {
+  it("200:updates the article votes and responds with the update article", () => {
+    return request(app)
+      .patch("/api/articles/1")
+      .send({ inc_votes: 1 })
+      .expect(200)
+      .then((res) => {
+        expect(res.body.article).toMatchObject({
+          article_id: 1,
+          votes: expect.any(Number),
+        });
+      });
+  });
+  it("400: responds with bad request when body is missing inc_votes", () => {
+    return request(app)
+      .patch("/api/articles/1")
+      .send({})
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
+      });
+  });
+  it("404: responds with not found when article does not exist", () => {
+    return request(app)
+      .patch("/api/articles/9999")
+      .send({ inc_votes: 1 })
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found");
+      });
+  });
+  it("400: responds with bad request when votes is a string ", () => {
+    return request(app)
+      .patch("/api/articles/1")
+      .send({ inc_votes: "colePalmer" })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
+      });
+  });
+  it("400: responds with bad request for invalid article_id", () => {
+    return request(app)
+      .patch("/api/articles/not-a-number")
+      .send({ inc_votes: 1 })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
+      });
+  });
+  it("200: increments votes by 1", () => {
+    return request(app)
+      .patch("/api/articles/1")
+      .send({ inc_votes: 1 })
+      .expect(200)
+      .then((res) => {
+        expect(res.body.article.votes).toBe(2);
+      });
+  });
+  it("200: decrements votes by 100", () => {
+    return request(app)
+      .patch("/api/articles/1")
+      .send({ inc_votes: -100 })
+      .expect(200)
+      .then((res) => {
+        expect(res.body.article.votes).toBe(-98);
+      });
+  });
+});

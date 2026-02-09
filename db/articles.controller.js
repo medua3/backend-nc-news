@@ -27,13 +27,24 @@ exports.getArticleComments = (req, res, next) => {
 const { insertComment } = require("./articles.model");
 
 exports.postArticleComment = (req, res, next) => {
-  console.log("✅ POST controller hit");
   const { article_id } = req.params;
   const { username, body } = req.body;
 
   insertComment(article_id, username, body)
     .then((comment) => {
       res.status(201).send({ comment });
+    })
+    .catch(next);
+};
+
+const { updateVote } = require("./articles.model");
+exports.patchArticleVotes = (req, res, next) => {
+  const { article_id } = req.params;
+  const { inc_votes } = req.body;
+
+  updateVote(article_id, inc_votes)
+    .then((article) => {
+      res.status(200).send({ article });
     })
     .catch(next);
 };
