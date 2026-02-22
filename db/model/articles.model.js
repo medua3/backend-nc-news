@@ -1,8 +1,25 @@
 const db = require("../connection");
-exports.fetchArticles = () => {
-  return db
-    .query(
-      `
+exports.fetchArticles = (sort_by = "created_at", order = "desc", topic) => {
+  const validSortColumns = [
+    "article_id",
+    "author",
+    "title",
+    "topic",
+    "created_at",
+    "votes",
+    "article_img_url",
+    "comment_count",
+  ];
+
+  if (!validSortColumns.includes(sort_by)) {
+    return Promise.reject({ status: 400, msg: "Bad request" });
+  }
+
+  if (order !== "asc" && order !== "desc") {
+    return Promise.reject({ status: 400, msg: "Bad request" });
+  }
+
+  let queryStr = `
     SELECT 
       articles.article_id,
       articles.author,
@@ -15,11 +32,37 @@ exports.fetchArticles = () => {
     FROM articles
     LEFT JOIN comments
       ON comments.article_id = articles.article_id
+  `;
+
+  const queryValues = [];
+
+  if (topic) {
+    queryStr += ` WHERE articles.topic = $1`;
+    queryValues.push(topic);
+  }
+
+  queryStr += `
     GROUP BY articles.article_id
-    ORDER BY articles.created_at DESC;
-  `,
-    )
-    .then(({ rows }) => rows);
+    ORDER BY ${sort_by} ${order.toUpperCase()};
+  `;
+
+  return db.query(queryStr, queryValues).then(({ rows }) => {
+    if (topic && rows.length === 0) {
+      return db
+        .query(`SELECT * FROM topics WHERE slug = $1`, [topic])
+        .then(({ rows: topicRows }) => {
+          if (!topicRows.length) {
+            return Promise.reject({
+              status: 404,
+              msg: "Topic not found",
+            });
+          }
+          return [];
+        });
+    }
+
+    return rows;
+  });
 };
 
 exports.fetchArticleById = (article_id) => {
@@ -27,21 +70,25 @@ exports.fetchArticleById = (article_id) => {
     .query(
       `
       SELECT 
-        article_id,
-        author,
-        title,
-        body,
-        topic,
-        created_at,
-        votes,
-        article_img_url
+        articles.article_id,
+        articles.author,
+        articles.title,
+        articles.body,
+        articles.topic,
+        articles.created_at,
+        articles.votes,
+        articles.article_img_url,
+        COUNT(comments.comment_id)::INT AS comment_count
       FROM articles
-      WHERE article_id = $1;
+      LEFT JOIN comments
+        ON comments.article_id = articles.article_id
+      WHERE articles.article_id = $1
+      GROUP BY articles.article_id;
       `,
       [article_id],
     )
     .then(({ rows }) => {
-      if (rows.length === 0) {
+      if (!rows.length) {
         return Promise.reject({
           status: 404,
           msg: "Article not found",

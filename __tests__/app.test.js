@@ -98,6 +98,90 @@ it("responds with articles without a body property", () => {
       });
     });
 });
+it("200: responds with articles sorted by created_at DESC by default", () => {
+  return request(app)
+    .get("/api/articles")
+    .expect(200)
+    .then(({ body }) => {
+      const { articles } = body;
+
+      expect(articles).toBeSortedBy("created_at", { descending: true });
+    });
+});
+it("200: sorts articles by votes", () => {
+  return request(app)
+    .get("/api/articles?sort_by=votes")
+    .expect(200)
+    .then(({ body }) => {
+      const { articles } = body;
+
+      expect(articles).toBeSortedBy("votes", { descending: true });
+    });
+});
+it("200: sorts articles in ascending order", () => {
+  return request(app)
+    .get("/api/articles?order=asc")
+    .expect(200)
+    .then(({ body }) => {
+      const { articles } = body;
+
+      expect(articles).toBeSortedBy("created_at", { descending: false });
+    });
+});
+it("200: sorts by votes in ascending order", () => {
+  return request(app)
+    .get("/api/articles?sort_by=votes&order=asc")
+    .expect(200)
+    .then(({ body }) => {
+      const { articles } = body;
+
+      expect(articles).toBeSortedBy("votes", { descending: false });
+    });
+});
+it("400: invalid sort_by query", () => {
+  return request(app)
+    .get("/api/articles?sort_by=banana")
+    .expect(400)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Bad request");
+    });
+});
+it("400: invalid order query", () => {
+  return request(app)
+    .get("/api/articles?order=sideways")
+    .expect(400)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Bad request");
+    });
+});
+it("200: responds with empty array when topic exists but has no articles", () => {
+  return request(app)
+    .get("/api/articles?topic=paper")
+    .expect(200)
+    .then(({ body }) => {
+      expect(body.articles).toEqual([]);
+    });
+});
+it("200: responds with articles filtered by topic", () => {
+  return request(app)
+    .get("/api/articles?topic=mitch")
+    .expect(200)
+    .then(({ body }) => {
+      expect(body.articles.length).toBeGreaterThan(0);
+
+      body.articles.forEach((article) => {
+        expect(article.topic).toBe("mitch");
+      });
+    });
+});
+it("404: responds with error when topic does not exist", () => {
+  return request(app)
+    .get("/api/articles?topic=banana")
+    .expect(404)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Topic not found");
+    });
+});
 
 describe("GET /api/users", () => {
   it("responds the route should respond with 200 :responds with an object that has  key of users containing a value of arrays", () => {
@@ -175,6 +259,15 @@ describe("GET /api/articles/:article_id", () => {
         });
       });
   });
+});
+it("200: responds with article including comment_count", () => {
+  return request(app)
+    .get("/api/articles/1")
+    .expect(200)
+    .then(({ body }) => {
+      expect(body.article).toHaveProperty("comment_count");
+      expect(typeof body.article.comment_count).toBe("number");
+    });
 });
 
 describe("GET /api/articles/:article_id/comments", () => {
