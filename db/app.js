@@ -3,7 +3,9 @@ const articlesRouter = require("./router/articles.router");
 const { getTopics } = require("./controller/topics.controller");
 const { getUsers } = require("./controller/users.controller");
 const commentsRouter = require("./router/comment.router");
+const cors = require('cors');
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.get("/api/topics/", getTopics);
